@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tracery with P5.js</title>
+    <script src="jquery-3.7.1.min.js"></script>
+    <script src="p5.min.js"></script>
+    <script src="tracery.min.js"></script>
+</head>
+<body>
+    <script>
+        $(document).ready(function() {
+            // Load the Tracery grammar from the external JSON file
+            $.getJSON('grammar.json', function(data) {
+                // Initialize the Tracery grammar with the loaded data
+                var grammar = tracery.createGrammar(data);
+
+                // Define the P5.js sketch function
+                let dragonX;
+                let dragonColor;
+                let dragonY;
+                let textX; // Variable to control the text position
+
+                function setup() {
+                    createCanvas(800, 600);
+                    dragonX = -200; // Start the dragon off-screen to the left
+                    dragonY = random(height); // Set an initial random y position
+                    dragonColor = color(random(255), random(255), random(255)); // Set an initial random color
+                    textX = width; // Start text at the right edge of the canvas
+                    noStroke();
+                }
+
+                function draw() {
+                    background(255);
+
+                    // Move the dragon to the right
+                    dragonX += 2; // Adjust the speed by changing the value (higher for faster)
+
+                    // Reset the dragon's position once it leaves the canvas
+                    if (dragonX > width + 200) {
+                        dragonX = -200; // Reset to the left side again
+                        dragonY = random(height); // Randomize the y position
+                        dragonColor = color(random(255), random(255), random(255)); // Randomize the color
+                    }
+
+                    drawDragon(dragonX, dragonY, dragonColor);
+
+                    // Move the text from right to left
+                    textX -= 2; // Adjust the speed of the text movement
+
+                    // Reset text position once it moves off-screen
+                    if (textX < -textWidth("Generated Text")) {
+                        textX = width; // Reset to the right side again
+                    }
+
+                    // Generate a sentence using the origin rule from the Tracery grammar
+                    var generatedText = grammar.flatten("#origin#");
+
+                    // Display the generated text on the canvas
+                    textSize(32);
+                    textAlign(CENTER, CENTER);
+                    fill(0);
+                    text(generatedText, textX, height - 50); // Display the text moving left
+                }
+
+                function drawDragon(x, y, col) {
+                    fill(col); // Set the dragon's color
+                    noStroke();
+                    ellipse(x, y, 200, 100); // main body
+
+                    // Head
+                    fill(255, 0, 0);
+                    ellipse(x + 100, y - 50, 60, 40); // dragon's head
+
+                    // Eyes
+                    fill(255);
+                    ellipse(x + 120, y - 60, 20, 20); // left eye
+                    ellipse(x + 130, y - 60, 10, 10); // right eye
+                    fill(0);
+                    ellipse(x + 120, y - 60, 10, 10); // left pupil
+                    ellipse(x + 130, y - 60, 5, 5); // right pupil
+
+                    // Tail
+                    fill(col);
+                    beginShape();
+                    vertex(x - 100, y + 20);
+                    bezierVertex(x - 150, y + 50, x - 200, y, x - 250, y + 20);
+                    endShape(CLOSE);
+
+                    // Legs
+                    fill(col);
+                    ellipse(x - 60, y + 50, 40, 20); // front leg
+                    ellipse(x - 140, y + 50, 40, 20); // back leg
+
+                    // Spikes on back
+                    fill(255, 0, 0);
+                    triangle(x - 30, y - 20, x - 10, y - 40, x + 10, y - 20); // first spike
+                    triangle(x, y - 30, x + 20, y - 50, x + 40, y - 30); // second spike
+                    triangle(x + 30, y - 40, x + 50, y - 60, x + 70, y - 40); // third spike
+
+                    // Wing (just a simple arc for now)
+                    fill(255, 0, 0, 150);
+                    arc(x + 80, y - 30, 100, 80, PI, TWO_PI); // top wing
+
+                    // Mouth (smiling)
+                    stroke(0);
+                    noFill();
+                    arc(x + 100, y - 40, 40, 20, 0, PI); // mouth
+                }
+
+                // Start the P5.js sketch
+                new p5(setup);
+            });
+        });
+    </script>
+</body>
+</html>
