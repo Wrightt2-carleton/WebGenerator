@@ -10,109 +10,214 @@
 </head>
 <body>
     <script>
-        $(document).ready(function() {
+    
+        let dragonX;
+        let dragonColor;
+        let dragonY;
+        let grammar;
+        let textX, textY; // Variable to control the text position
+        let originText = "";
+        let lastChangeTime = 0;
+        let movingText = "";
+        let particles = [];
             // Load the Tracery grammar from the external JSON file
-            $.getJSON('grammar.json', function(data) {
-                // Initialize the Tracery grammar with the loaded data
-                var grammar = tracery.createGrammar(data);
-
-                // Define the P5.js sketch function
-                let dragonX;
-                let dragonColor;
-                let dragonY;
-                let textX; // Variable to control the text position
+            // Define the P5.js sketch function
 
                 function setup() {
-                    createCanvas(800, 600);
+                    createCanvas(windowWidth, windowHeight);
                     dragonX = -200; // Start the dragon off-screen to the left
                     dragonY = random(height); // Set an initial random y position
                     dragonColor = color(random(255), random(255), random(255)); // Set an initial random color
-                    textX = width; // Start text at the right edge of the canvas
                     noStroke();
+                    $.getJSON('grammar.json', function(data) {
+                        // Initialize the Tracery grammar with the loaded data
+                        //all grammer is loaded from the gutenberg_books folder
+                        grammar = tracery.createGrammar(data);
+                    });
                 }
 
                 function draw() {
-                    background(255);
+                    background("lightblue");
+
+                    // Change origin text every 1.5 seconds
+                    if (millis() - lastChangeTime > 1500) {
+                        updateOriginText();
+                        lastChangeTime = millis();
+                    }
+
+                    // Set text properties
+                    textSize(14);
+                    textAlign(LEFT, TOP);
+                    fill(0);
+
+                    // Define box properties
+                    let boxX = 50;
+                    let boxY = 10;
+                    let boxWidth = width - 100; // Leave some margin
+                    let boxHeight = 50; // Will adjust dynamically
+
+                    // Calculate wrapped text height
+                    let words = originText.split(' ');
+                    let lines = [];
+                    let line = '';
+                    for (let i = 0; i < words.length; i++) {
+                        let testLine = line + words[i] + ' ';
+                        if (textWidth(testLine) > boxWidth && i > 0) {
+                            lines.push(line);
+                            line = words[i] + ' ';
+                        } else {
+                            line = testLine;
+                        }
+                    }
+                    lines.push(line); // Add last line
+                    boxHeight = lines.length * 20 + 10; // Adjust height based on number of lines
+
+                    // Draw the rectangle box
+                    fill(200);
+                    rect(boxX, boxY, boxWidth, boxHeight, 10); // Rounded box
+
+                    // Draw wrapped text
+                    fill(0);
+                    drawWrappedText(originText, boxX + 10, boxY + 10, boxWidth - 20, 20);
+
+
+                    for (let i = 0; i < 2; i++) {
+                        let p = new Particle();
+                        particles.push(p);
+                    }
+                        //This moves the particles
+                    for (let i = particles.length - 1; i >= 0; i--) {
+                        particles[i].update();
+                        particles[i].show();
+                        if (particles[i].finished()) {
+                        // remove this particle
+                        particles.splice(i, 1);
+                        }
+                    }
 
                     // Move the dragon to the right
-                    dragonX += 2; // Adjust the speed by changing the value (higher for faster)
+                    dragonX += 2;
 
                     // Reset the dragon's position once it leaves the canvas
                     if (dragonX > width + 200) {
-                        dragonX = -200; // Reset to the left side again
-                        dragonY = random(height); // Randomize the y position
-                        dragonColor = color(random(255), random(255), random(255)); // Randomize the color
+                        dragonX = -200;
+                        dragonY = random(height);
+                        dragonColor = color(random(255), random(255), random(255));
                     }
 
                     drawDragon(dragonX, dragonY, dragonColor);
+                }
 
-                    // Move the text from right to left
-                    textX -= 2; // Adjust the speed of the text movement
+                function drawWrappedText(txt, x, y, maxWidth, lineHeight) {
+                    let words = txt.split(' ');
+                    let line = '';
+                    let yOffset = 0;
 
-                    // Reset text position once it moves off-screen
-                    if (textX < -textWidth("Generated Text")) {
-                        textX = width; // Reset to the right side again
+                    for (let i = 0; i < words.length; i++) {
+                        let testLine = line + words[i] + ' ';
+                        if (textWidth(testLine) > maxWidth && i > 0) {
+                            text(line, x, y + yOffset);
+                            line = words[i] + ' ';
+                            yOffset += lineHeight;
+                        } else {
+                            line = testLine;
+                        }
+                    }
+                    text(line, x, y + yOffset); // Draw the last line
+                }
+
+                class Particle {
+                    constructor() {
+                        //This sets the x value to anywhere - try using a static value
+                        this.x = (windowWidth);
+                        //This keeps the y fixed - try reversing it using windowHeight
+                        this.y = random (0, windowHeight)
+                            //This sets the range of x movement - try limiting it to + or -
+                        this.vy = random(-1, 1);
+                            //This sets the range of y movement - try reversing it
+                        this.vx = random(1, -5);
+                            //This sets the range of color - this is what keeps us in yellows
+                            //Try using it for all three to create a broader range of color
+                            //Or try changing the scale to use the full 0-255
+                            this.color = random(100,230);
+                            //This sets the starting alpha so it starts bright and fades 
+                            //Try reversing it! you can start at 0, add 1, and stop at 255
+                            this.alpha = 255;
+                            //This picks a random word for each particle
+                            this.text = grammar.flatten("#object#");
                     }
 
-                    // Generate a sentence using the origin rule from the Tracery grammar
-                    var generatedText = grammar.flatten("#origin#");
+                    finished() {
+                            //Change this to 255 if you reverse the fade
+                        return this.alpha < 0;
+                    }
 
-                    // Display the generated text on the canvas
-                    textSize(32);
-                    textAlign(CENTER, CENTER);
-                    fill(0);
-                    text(generatedText, textX, height - 50); // Display the text moving left
+                    update() {
+                        this.x += this.vx;
+                        this.y += this.vy;
+                            //Change this to +1 if you reverse the fade
+                        this.alpha -= 1;
+                    }
+
+                    show() {
+                        noStroke();
+                            //You can also add the outline
+                        //stroke(255);
+                            //This keeps R and G values at 255 to allow for yellows
+                            //Try changing it!
+                        fill(0,0,0, this.alpha);
+                            //This positions the text
+                        text(this.text, this.x, this.y);
+                    }
+                }
+                function updateOriginText() {
+                    originText = grammar.flatten("#origin#"); // Updates the fixed origin text
                 }
 
                 function drawDragon(x, y, col) {
                     fill(col); // Set the dragon's color
                     noStroke();
-                    ellipse(x, y, 200, 100); // main body
+                    ellipse(x-40, y-10, 200, 70); // main body
 
                     // Head
                     fill(255, 0, 0);
-                    ellipse(x + 100, y - 50, 60, 40); // dragon's head
+                    ellipse(x + 80, y - 30, 100, 40); // dragon's head
 
                     // Eyes
                     fill(255);
-                    ellipse(x + 120, y - 60, 20, 20); // left eye
-                    ellipse(x + 130, y - 60, 10, 10); // right eye
+                    ellipse(x + 100, y - 40, 20, 10); // left eye
+                    //ellipse(x + 130, y - 40, 10, 10); // right eye
                     fill(0);
-                    ellipse(x + 120, y - 60, 10, 10); // left pupil
-                    ellipse(x + 130, y - 60, 5, 5); // right pupil
+                    ellipse(x + 100, y - 40, 5, 10); // left pupil
+                    //ellipse(x + 130, y - 40, 5, 5); // right pupil
 
                     // Tail
                     fill(col);
-                    beginShape();
-                    vertex(x - 100, y + 20);
-                    bezierVertex(x - 150, y + 50, x - 200, y, x - 250, y + 20);
-                    endShape(CLOSE);
-
+                    triangle(x - 130, y - 25, x - 130, y + 5, x - 250, y + 10);
                     // Legs
                     fill(col);
-                    ellipse(x - 60, y + 50, 40, 20); // front leg
-                    ellipse(x - 140, y + 50, 40, 20); // back leg
+                    ellipse(x - 10, y + 30, 20, 40); // front leg
+                    ellipse(x - 80, y + 30, 20, 40); // back leg
 
                     // Spikes on back
                     fill(255, 0, 0);
-                    triangle(x - 30, y - 20, x - 10, y - 40, x + 10, y - 20); // first spike
-                    triangle(x, y - 30, x + 20, y - 50, x + 40, y - 30); // second spike
-                    triangle(x + 30, y - 40, x + 50, y - 60, x + 70, y - 40); // third spike
+                    triangle(x - 100, y - 30, x - 80, y - 50, x - 60, y - 40); // first spike
+                    triangle(x - 50, y - 40, x - 20, y - 60, x - 0, y - 40); // second spike
+                    triangle(x + 10, y - 40, x + 30, y - 60, x + 50, y - 20); // third spike
+
+                    //horn 
+                    triangle(x + 70, y - 40, x + 80, y - 60, x + 10, y - 40);
 
                     // Wing (just a simple arc for now)
-                    fill(255, 0, 0, 150);
-                    arc(x + 80, y - 30, 100, 80, PI, TWO_PI); // top wing
+                    fill(255, 0, 0, 250);
+                    push(); 
+                    translate(x - 80, y - 60); 
+                    rotate(radians(35)); // Adjust the angle as needed
+                    arc(0, 0, 130, 90, PI, TWO_PI);
+                    pop();
 
-                    // Mouth (smiling)
-                    stroke(0);
-                    noFill();
-                    arc(x + 100, y - 40, 40, 20, 0, PI); // mouth
                 }
-
-                // Start the P5.js sketch
-                new p5(setup);
-            });
-        });
+    
     </script>
 </body>
 </html>
