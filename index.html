@@ -94,6 +94,24 @@
                     fill(0);
                     drawWrappedText(originText, boxX + 10, boxY + 10, boxWidth - 20, 20);
 
+                    //credits box
+                    // Text Box Properties
+                    let box2X = 10;
+                    let box2Y = height - 40;
+                    let box2W = 120;
+                    let box2H = 30;
+
+                    // Draw Box
+                    fill(255);
+                    stroke(0);
+                    rect(box2X, box2Y, box2W, box2H, 5);
+
+                    // Display Text
+                    fill(0);
+                    noStroke();
+                    textSize(14);
+                    textAlign(LEFT, BOTTOM);
+                    text("Hello, World!", boxX + 10, boxY + boxH / 2);
 
                     // Move the dragon to the right
                     dragonX += 2;
