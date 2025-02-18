@@ -98,11 +98,11 @@
                     // Text Box Properties
                     let box2X = 10;
                     let box2Y = height - 40;
-                    let box2W = 120;
+                    let box2W = 260;
                     let box2H = 30;
 
                     // Draw Box
-                    fill(255);
+                    fill(155);
                     stroke(0);
                     rect(box2X, box2Y, box2W, box2H, 5);
 
@@ -110,8 +110,8 @@
                     fill(0);
                     noStroke();
                     textSize(14);
-                    textAlign(LEFT, BOTTOM);
-                    text("Hello, World!", boxX + 10, boxY + boxH / 2);
+                    textAlign(LEFT, CENTER);
+                    text("All text sourced from Gutenberg Library", box2X + 10, box2Y + box2H / 2);
 
                     // Move the dragon to the right
                     dragonX += 2;
